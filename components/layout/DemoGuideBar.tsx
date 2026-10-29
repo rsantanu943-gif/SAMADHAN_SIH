@@ -63,7 +63,7 @@ const DEMO_STEPS = [
 ];
 
 export function DemoGuideBar() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
 
   const handleReset = () => {
@@ -76,20 +76,20 @@ export function DemoGuideBar() {
       <div className="bg-amber-500/10 border-b border-amber-500/30 px-6 py-2 flex items-center justify-between text-xs text-amber-900">
         <div className="flex items-center gap-2 font-semibold">
           <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-          <span>Samadhan360 Guided Evaluator Walkthrough</span>
+          <span>Demo workspace · Explore Samadhan360</span>
         </div>
         <button
           onClick={() => setIsOpen(true)}
           className="underline hover:text-amber-700 font-bold cursor-pointer"
         >
-          Open Guided Demo Steps
+          Take a guided tour
         </button>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white border-b border-amber-500/30 px-6 py-3 shadow-md relative z-20">
+    <div className="bg-slate-900 text-white border-b border-amber-500/30 px-6 py-3 shadow-md relative z-20">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-md bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400">
