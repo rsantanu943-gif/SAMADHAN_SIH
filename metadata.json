@@ -1,0 +1,6 @@
+{
+  "name": "Samadhan360 | Smart Approval & Compliance Management System",
+  "description": "Intelligent surveillance, deadline risk radar, smart document checker, next best action assistant, and institutional compliance passport.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
