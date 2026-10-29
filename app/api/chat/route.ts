@@ -1,3 +1,4 @@
+import { getApprovedUser } from "@/lib/auth/server";
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import {
@@ -25,6 +26,9 @@ const ROLE_INSTRUCTIONS: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
+  if (!(await getApprovedUser())) {
+    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  }
   let userQuery = "";
   let selectedRole = "compliance_officer";
   let requestedModel = "gemini-3.8-flash";
