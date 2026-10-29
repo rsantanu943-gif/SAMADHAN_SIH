@@ -44,18 +44,20 @@ export function Header() {
   const currentUser = DEMO_USERS[currentRole] || DEMO_USERS.SCRUTINY_OFFICER;
 
   return (
-    <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+    <header className="workspace-header h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
       {/* Search Bar */}
       <div className="flex items-center gap-4 flex-1 max-w-xl">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
-            type="text" 
-            placeholder="Search Permanent ID (e.g. 1-4029102), App No (APP-2026-102), or Institute..." 
+            aria-label="Search applications and institutions"
+            type="search" 
+            placeholder="Search applications, institutions, or IDs…" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-800 placeholder:text-slate-400"
           />
+        {searchQuery.trim() && <div className="search-results"><p>Applications</p>{FlowGuardStore.getApplications().filter(a => `${a.institutionName} ${a.applicationNumber}`.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5).map(a => <Link href={`/applications/${a.id}`} key={a.id} onClick={() => setSearchQuery("")}><strong>{a.institutionName}</strong><small>{a.applicationNumber} · {a.currentStage}</small></Link>)}{!FlowGuardStore.getApplications().some(a => `${a.institutionName} ${a.applicationNumber}`.toLowerCase().includes(searchQuery.toLowerCase())) && <span>No matching applications. Try an institution name or application ID.</span>}</div>}
         </div>
       </div>
 
