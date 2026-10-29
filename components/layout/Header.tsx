@@ -2,8 +2,6 @@
 
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { logout } from "@netlify/identity";
-import { LogOut } from "lucide-react";
 import { 
   Bell, 
   Search, 
@@ -21,8 +19,6 @@ import { UserRole } from "@/lib/types";
 const emptySubscribe = () => () => {};
 
 export function Header() {
-  const [signingOut, setSigningOut] = useState(false);
-  const [signOutError, setSignOutError] = useState("");
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [showNotifPreview, setShowNotifPreview] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,14 +112,6 @@ export function Header() {
           )}
         </div>
 
-        <div className="relative">
-          <button type="button" title="Sign out" aria-label="Sign out" disabled={signingOut} className="p-2 text-slate-500 hover:text-slate-900 rounded-md hover:bg-slate-100 disabled:opacity-50" onClick={async () => {
-            setSigningOut(true); setSignOutError("");
-            try { await logout(); window.location.replace("/login"); }
-            catch { setSignOutError("Could not sign out. Please try again."); setSigningOut(false); }
-          }}><LogOut className="w-4 h-4"/></button>
-          {signOutError && <p role="alert" className="absolute right-0 top-full w-52 bg-white border border-red-200 rounded p-2 text-xs text-red-700">{signOutError}</p>}
-        </div>
         {/* Role Switcher (RBAC Evaluation) */}
         <div className="relative pl-2 border-l border-slate-200">
           <button
