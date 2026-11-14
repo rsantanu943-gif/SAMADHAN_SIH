@@ -115,28 +115,22 @@ export async function POST(req: NextRequest) {
       errorMessage.includes("quota") ||
       errorMessage.includes("rate-limits");
 
-    if (isQuotaOrRateLimit) {
-      const fallbackResponse = generateStatutoryFallback(
-        userQuery || "NIST SP 800-53 telemetry audit standards",
-        selectedRole
-      );
-
-      return NextResponse.json({
-        text: `${fallbackResponse.text}\n\n*Note: Live quota limit reached; displaying verified statutory knowledge base synthesis.*`,
-        groundingSources: fallbackResponse.sources,
-        searchQueries: fallbackResponse.queries,
-        modelUsed: `${requestedModel} (Statutory Knowledge Base)`,
-        quotaStatus: "exhausted",
-      });
-    }
-
-    return NextResponse.json(
-      {
-        error: error.message || "Failed to generate compliance advice.",
-        details: error.toString(),
-      },
-      { status: 500 }
+    const fallbackResponse = generateStatutoryFallback(
+      userQuery || "NIST SP 800-53 telemetry audit standards",
+      selectedRole
     );
+
+    return NextResponse.json({
+      text: `${fallbackResponse.text}\n\n*Note: ${
+        isQuotaOrRateLimit
+          ? "Live quota limit reached"
+          : "Live model temporarily unavailable"
+      }; displaying verified statutory knowledge base synthesis.*`,
+      groundingSources: fallbackResponse.sources,
+      searchQueries: fallbackResponse.queries,
+      modelUsed: `${requestedModel} (Statutory Knowledge Base)`,
+      quotaStatus: isQuotaOrRateLimit ? "exhausted" : "fallback",
+    });
   }
 }
 

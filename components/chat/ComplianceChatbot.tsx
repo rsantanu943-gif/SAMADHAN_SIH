@@ -10,13 +10,12 @@ import {
   Globe,
   RefreshCw,
   ExternalLink,
-  ChevronDown,
   Trash2,
   ShieldCheck,
   AlertCircle,
   Cpu,
-  BookOpen,
-  HelpCircle,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -37,7 +36,7 @@ const INITIAL_MESSAGES: ChatMessage[] = [
     id: "init-1",
     role: "assistant",
     content:
-      "**Welcome to the CivicCompliance AI Advisory Terminal.**\n\nI am configured with multi-state statutory databases and real-time **Google Search Grounding** to assist with:\n\n* **Regulatory Inquiries**: Clarifying federal & state statutory mandates (NIST 800-53, HIPAA, FedRAMP, Clean Air acts).\n* **Audit Remediation**: Developing corrective action plans for flagged telemetry or security findings.\n* **Live Verification**: Cross-referencing current administrative rulemaking and enforcement notices via Google Search.\n\nHow can I support your compliance review today?",
+      "**Welcome to the Samadhan360 Statutory AI Advisory Terminal.**\n\nI am configured with multi-state statutory databases and real-time **Google Search Grounding** to assist with:\n\n* **Regulatory Inquiries**: Clarifying AICTE APH 2026, federal & state statutory mandates.\n* **Audit Remediation**: Developing corrective action plans for flagged telemetry or documentary deficiencies.\n* **Live Verification**: Cross-referencing current administrative rulemaking and enforcement notices via Google Search.\n\nHow can I support your compliance review today?",
     timestamp: "Just now",
   },
 ];
@@ -84,6 +83,8 @@ export function ComplianceChatbot({
   const [selectedRole, setSelectedRole] = useState<string>("compliance_officer");
   const [enableSearch, setEnableSearch] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [lastPrompt, setLastPrompt] = useState<string>("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -101,6 +102,7 @@ export function ComplianceChatbot({
     if (!text || isLoading) return;
 
     setError(null);
+    setLastPrompt(text);
     const userMessage = createMessage("user", text);
 
     const newMessages = [...messages, userMessage];
@@ -159,27 +161,27 @@ export function ComplianceChatbot({
   return (
     <div
       className={cn(
-        "bg-surface-container-lowest border border-outline-variant rounded-lg flex flex-col h-[750px] shadow-subtle overflow-hidden",
+        "bg-[#FAF8F1] border border-[#D5DDCB] rounded-xl flex flex-col h-[740px] shadow-[0_6px_24px_-8px_rgba(38,59,50,0.12)] overflow-hidden",
         className
       )}
     >
       {/* Terminal Top Control Bar */}
-      <div className="px-6 py-3.5 border-b border-outline-variant bg-surface-container-low flex flex-wrap items-center justify-between gap-3">
+      <div className="px-5 py-3.5 border-b border-[#D5DDCB] bg-[#EAE2D2]/70 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-white shadow-sm">
+          <div className="w-8 h-8 rounded-lg bg-[#263B32] flex items-center justify-center text-[#8FCDBB] shadow-xs">
             <Bot className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-sm text-on-surface">
-                CivicAI Compliance Terminal
+              <h3 className="font-bold text-sm text-[#263B32]">
+                Samadhan360 AI Compliance Terminal
               </h3>
               <Badge variant="info" className="text-[10px] px-1.5 py-0 font-mono">
                 {selectedModel.replace("gemini-", "")}
               </Badge>
             </div>
-            <p className="text-[11px] text-on-surface-variant flex items-center gap-1.5 mt-0.5">
-              <span className="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse"></span>
+            <p className="text-[11px] text-[#68776A] flex items-center gap-1.5 mt-0.5">
+              <span className="w-2 h-2 rounded-full bg-[#8FCDBB] border border-[#263B32]/40 inline-block" />
               Institutional Session Active
             </p>
           </div>
@@ -188,26 +190,26 @@ export function ComplianceChatbot({
         {/* Configuration Selectors */}
         <div className="flex items-center gap-2 flex-wrap text-xs">
           {/* Role Selector */}
-          <div className="flex items-center gap-1.5 bg-white border border-outline-variant px-2.5 py-1 rounded-md">
-            <span className="text-outline text-[11px] font-semibold">Role:</span>
+          <div className="flex items-center gap-1.5 bg-[#FAF8F1] border border-[#D5DDCB] px-2.5 py-1 rounded-lg">
+            <span className="text-[#68776A] text-[11px] font-semibold">Role:</span>
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="bg-transparent text-xs font-medium text-on-surface focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs font-medium text-[#263B32] focus:outline-none cursor-pointer"
             >
               <option value="compliance_officer">Compliance Officer</option>
-              <option value="legal_researcher">Legal & Statutory Researcher</option>
-              <option value="cyber_auditor">InfoSec & Telemetry Auditor</option>
+              <option value="legal_researcher">Legal &amp; Statutory Researcher</option>
+              <option value="cyber_auditor">InfoSec &amp; Telemetry Auditor</option>
             </select>
           </div>
 
           {/* Model Selector */}
-          <div className="flex items-center gap-1.5 bg-white border border-outline-variant px-2.5 py-1 rounded-md">
-            <Cpu className="w-3.5 h-3.5 text-primary" />
+          <div className="flex items-center gap-1.5 bg-[#FAF8F1] border border-[#D5DDCB] px-2.5 py-1 rounded-lg">
+            <Cpu className="w-3.5 h-3.5 text-[#2A6557]" />
             <select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="bg-transparent text-xs font-medium text-on-surface focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs font-medium text-[#263B32] focus:outline-none cursor-pointer"
             >
               <option value="gemini-3.8-flash">gemini-3.8-flash (General + Search)</option>
               <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Fast Tasks)</option>
@@ -219,10 +221,10 @@ export function ComplianceChatbot({
           <button
             onClick={() => setEnableSearch(!enableSearch)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-semibold transition-all cursor-pointer",
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold transition-all cursor-pointer",
               enableSearch
-                ? "bg-secondary-container text-on-secondary-container border-secondary/30"
-                : "bg-surface-container text-on-surface-variant border-outline-variant hover:bg-surface-container-high"
+                ? "bg-[#8FCDBB]/40 text-[#263B32] border-[#8FCDBB]"
+                : "bg-[#FAF8F1] text-[#68776A] border-[#D5DDCB] hover:bg-[#EAE2D2]"
             )}
             title="Toggle live Google Search Grounding to verify recent statutory updates"
           >
@@ -234,7 +236,7 @@ export function ComplianceChatbot({
           <button
             onClick={clearChat}
             aria-label="Clear chat conversation"
-            className="p-1.5 text-outline hover:text-error hover:bg-error-container/20 rounded-md transition-colors cursor-pointer"
+            className="p-1.5 text-[#68776A] hover:text-[#8C2D25] hover:bg-[#F5DDD9] rounded-lg transition-colors cursor-pointer"
             title="Reset Conversation"
           >
             <Trash2 className="w-4 h-4" />
@@ -243,7 +245,7 @@ export function ComplianceChatbot({
       </div>
 
       {/* Scrollable Messages Thread */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-surface/50">
+      <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-[#F3EBDD]/55">
         {messages.map((message) => {
           const isUser = message.role === "user";
           return (
@@ -255,17 +257,17 @@ export function ComplianceChatbot({
               )}
             >
               {!isUser && (
-                <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0 border border-primary/20 mt-1">
-                  <ShieldCheck className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 rounded-full bg-[#263B32] text-[#8FCDBB] flex items-center justify-center shrink-0 border border-[#8FCDBB]/40 mt-1">
+                  <ShieldCheck className="w-4 h-4" />
                 </div>
               )}
 
               <div
                 className={cn(
-                  "rounded-lg p-4 text-sm leading-relaxed max-w-[85%] shadow-sm",
+                  "rounded-xl p-4 text-sm leading-relaxed max-w-[85%] shadow-xs",
                   isUser
-                    ? "bg-[#0284C7] text-white"
-                    : "bg-white border border-outline-variant text-on-surface"
+                    ? "bg-[#263B32] text-[#FAF8F1] border border-[#263B32]"
+                    : "bg-[#FAF8F1] border border-[#D5DDCB] text-[#263B32]"
                 )}
               >
                 {/* Message Header info */}
@@ -273,14 +275,40 @@ export function ComplianceChatbot({
                   className={cn(
                     "flex items-center justify-between text-[11px] font-semibold mb-2 pb-1.5 border-b",
                     isUser
-                      ? "border-white/20 text-white/80"
-                      : "border-outline-variant/30 text-on-surface-variant"
+                      ? "border-[#8FCDBB]/25 text-[#8FCDBB]"
+                      : "border-[#D5DDCB] text-[#68776A]"
                   )}
                 >
                   <span>
-                    {isUser ? "Auditor / Compliance Officer" : "CivicAI Advisory Engine"}
+                    {isUser ? "Auditor / Compliance Officer" : "Samadhan360 Advisory Engine"}
                   </span>
-                  <span className="tabular-nums font-mono opacity-80">{message.timestamp}</span>
+                  <div className="flex items-center gap-2 ml-3">
+                    <span className="tabular-nums font-mono opacity-85">{message.timestamp}</span>
+                    {!isUser && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(message.content);
+                          setCopiedId(message.id);
+                          setTimeout(() => setCopiedId((prev) => (prev === message.id ? null : prev)), 2000);
+                        }}
+                        aria-label="Copy response"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#EAE2D2]/80 hover:bg-[#8FCDBB]/40 text-[#263B32] text-[10px] font-semibold cursor-pointer transition-colors"
+                      >
+                        {copiedId === message.id ? (
+                          <>
+                            <Check className="w-3 h-3 text-[#2A6557]" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Markdown Content */}
@@ -288,8 +316,8 @@ export function ComplianceChatbot({
                   className={cn(
                     "prose prose-sm max-w-none break-words",
                     isUser
-                      ? "text-white prose-headings:text-white prose-p:text-white prose-strong:text-white prose-ul:text-white prose-li:text-white prose-code:text-white prose-code:bg-white/10"
-                      : "text-on-surface prose-headings:text-on-surface prose-strong:text-on-surface prose-code:text-primary prose-code:bg-surface-container prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded"
+                      ? "text-[#FAF8F1] prose-headings:text-[#FAF8F1] prose-p:text-[#FAF8F1] prose-strong:text-[#8FCDBB] prose-ul:text-[#FAF8F1] prose-li:text-[#FAF8F1] prose-code:text-[#FAF8F1] prose-code:bg-[#FAF8F1]/10"
+                      : "text-[#263B32] prose-headings:text-[#263B32] prose-strong:text-[#263B32] prose-code:text-[#263B32] prose-code:bg-[#EAE2D2] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded"
                   )}
                 >
                   <Markdown>{message.content}</Markdown>
@@ -299,8 +327,8 @@ export function ComplianceChatbot({
                 {!isUser &&
                   message.groundingSources &&
                   message.groundingSources.length > 0 && (
-                    <div className="mt-3.5 pt-3 border-t border-outline-variant/40">
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-secondary uppercase tracking-wider mb-2">
+                    <div className="mt-3.5 pt-3 border-t border-[#D5DDCB]">
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#2A6557] uppercase tracking-wider mb-2">
                         <Globe className="w-3.5 h-3.5" />
                         <span>Google Search Grounding Sources ({message.groundingSources.length})</span>
                       </div>
@@ -311,7 +339,7 @@ export function ComplianceChatbot({
                             href={source.uri}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-secondary-container/40 hover:bg-secondary-container/70 border border-secondary/20 text-[11px] text-on-secondary-container font-medium transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#8FCDBB]/30 hover:bg-[#8FCDBB]/50 border border-[#8FCDBB] text-[11px] text-[#263B32] font-medium transition-colors"
                           >
                             <span className="truncate max-w-[200px]">{source.title}</span>
                             <ExternalLink className="w-3 h-3 shrink-0" />
@@ -325,14 +353,14 @@ export function ComplianceChatbot({
                 {!isUser &&
                   message.searchQueries &&
                   message.searchQueries.length > 0 && (
-                    <div className="mt-2 text-[10px] text-outline font-mono">
+                    <div className="mt-2 text-[10px] text-[#68776A] font-mono">
                       Query Grounding: {message.searchQueries.join(" • ")}
                     </div>
                   )}
               </div>
 
               {isUser && (
-                <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center shrink-0 border border-outline-variant text-on-surface mt-1">
+                <div className="w-8 h-8 rounded-full bg-[#EAE2D2] flex items-center justify-center shrink-0 border border-[#D5DDCB] text-[#263B32] mt-1">
                   <User className="w-4 h-4" />
                 </div>
               )}
@@ -343,11 +371,11 @@ export function ComplianceChatbot({
         {/* Loading Indicator */}
         {isLoading && (
           <div className="flex gap-3 mr-auto max-w-4xl">
-            <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0 border border-primary/20">
-              <Sparkles className="w-4 h-4 text-white animate-spin" />
+            <div className="w-8 h-8 rounded-full bg-[#263B32] text-[#8FCDBB] flex items-center justify-center shrink-0 border border-[#8FCDBB]/40">
+              <Sparkles className="w-4 h-4 animate-spin" />
             </div>
-            <div className="bg-white border border-outline-variant rounded-lg p-4 text-sm text-on-surface-variant flex items-center gap-3 shadow-sm">
-              <RefreshCw className="w-4 h-4 text-primary animate-spin" />
+            <div className="bg-[#FAF8F1] border border-[#D5DDCB] rounded-xl p-4 text-sm text-[#68776A] flex items-center gap-3 shadow-xs">
+              <RefreshCw className="w-4 h-4 text-[#2A6557] animate-spin" />
               <span>
                 {enableSearch
                   ? "Querying regulatory models and retrieving Google Search grounding data..."
@@ -359,12 +387,23 @@ export function ComplianceChatbot({
 
         {/* Error Notification */}
         {error && (
-          <div className="bg-error-container/30 border border-error/30 p-3.5 rounded-lg flex items-start gap-2.5 text-xs text-error">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <span className="font-bold">Advisory Terminal Notice: </span>
-              <span>{error}</span>
+          <div className="bg-[#F5DDD9] border border-[#DFACA5] p-3.5 rounded-xl flex items-center justify-between gap-2.5 text-xs text-[#5E1A14]">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">Advisory Terminal Notice: </span>
+                <span>{error}</span>
+              </div>
             </div>
+            {lastPrompt && (
+              <button
+                type="button"
+                onClick={() => handleSendMessage(lastPrompt)}
+                className="px-2.5 py-1 rounded-md bg-[#FAF8F1] hover:bg-[#EAE2D2] text-[#263B32] border border-[#D5DDCB] font-bold shrink-0 cursor-pointer"
+              >
+                Retry
+              </button>
+            )}
           </div>
         )}
 
@@ -372,9 +411,9 @@ export function ComplianceChatbot({
       </div>
 
       {/* Suggested Prompts Strip */}
-      <div className="px-6 py-2.5 border-t border-outline-variant/40 bg-surface-container-low overflow-x-auto flex items-center gap-2">
-        <span className="text-[11px] font-bold text-outline shrink-0 flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-primary" />
+      <div className="px-5 py-2.5 border-t border-[#D5DDCB] bg-[#EAE2D2]/60 overflow-x-auto flex items-center gap-2">
+        <span className="text-[11px] font-bold text-[#68776A] shrink-0 flex items-center gap-1">
+          <Sparkles className="w-3 h-3 text-[#2A6557]" />
           Suggested:
         </span>
         {SUGGESTED_PROMPTS.map((prompt, idx) => (
@@ -382,7 +421,7 @@ export function ComplianceChatbot({
             key={idx}
             onClick={() => handleSendMessage(prompt)}
             disabled={isLoading}
-            className="text-xs bg-white hover:bg-primary-container/20 border border-outline-variant hover:border-primary/40 px-2.5 py-1 rounded-full whitespace-nowrap text-on-surface-variant hover:text-primary transition-all disabled:opacity-50 cursor-pointer"
+            className="text-xs bg-[#FAF8F1] hover:bg-[#8FCDBB]/35 border border-[#D5DDCB] hover:border-[#8FCDBB] px-3 py-1 rounded-lg whitespace-nowrap text-[#263B32] transition-all disabled:opacity-50 cursor-pointer"
           >
             {prompt}
           </button>
@@ -390,7 +429,7 @@ export function ComplianceChatbot({
       </div>
 
       {/* Input Composer */}
-      <div className="p-4 border-t border-outline-variant bg-surface-container-lowest">
+      <div className="p-4 border-t border-[#D5DDCB] bg-[#FAF8F1]">
         <div className="relative flex items-center gap-2">
           <textarea
             ref={inputRef}
@@ -399,20 +438,20 @@ export function ComplianceChatbot({
             onKeyDown={handleKeyDown}
             placeholder="Ask regarding regulatory compliance standards, audit findings, or search live statutory updates (Enter to send)..."
             rows={2}
-            className="w-full pl-4 pr-14 py-2.5 text-sm bg-surface-container-low border border-outline-variant rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none text-on-surface placeholder:text-outline"
+            className="w-full pl-4 pr-14 py-2.5 text-sm bg-[#F3EBDD] border border-[#D5DDCB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8FCDBB]/50 focus:border-[#8FCDBB] resize-none text-[#263B32] placeholder:text-[#68776A]"
           />
           <Button
             onClick={() => handleSendMessage()}
             disabled={!input.trim() || isLoading}
-            className="absolute right-2 bottom-2.5 h-8 px-3 rounded-md"
+            className="absolute right-2 bottom-2.5 h-8 px-3 rounded-lg"
             aria-label="Send message"
           >
             <Send className="w-4 h-4" />
           </Button>
         </div>
-        <div className="flex justify-between items-center mt-2 text-[11px] text-outline px-1">
+        <div className="flex justify-between items-center mt-2 text-[11px] text-[#68776A] px-1">
           <span>
-            Powered by <strong>{selectedModel}</strong> •{" "}
+            Powered by <strong className="text-[#263B32]">{selectedModel}</strong> •{" "}
             {enableSearch ? "Google Search Grounding Enabled" : "Offline Knowledge Base"}
           </span>
           <span>Shift + Enter for new line</span>

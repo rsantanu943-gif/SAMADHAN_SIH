@@ -237,3 +237,12 @@ export interface OverlapRecord {
   reviewRemarks?: string;
 }
 
+export interface EngineSettings {
+  advanceWarningDays: number;
+  highRiskThresholdDays: number;
+  inactivityAlertDays: number;
+  autoEscalateOverdue48h: boolean;
+  sendSmsDeficiencyAlert: boolean;
+  minOcrConfidencePercent: number;
+  duplicateHashMode: 'STRICT_CROSS_REGIONAL' | 'INTRA_STATE';
+}

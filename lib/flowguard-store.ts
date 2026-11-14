@@ -9,7 +9,8 @@ import {
   AuditLogEntry,
   NextBestActionItem,
   RiskLevel,
-  OverlapRecord
+  OverlapRecord,
+  EngineSettings
 } from './types';
 
 // Default Demo User Profile
@@ -715,7 +716,37 @@ let auditState: AuditLogEntry[] = [...INITIAL_AUDIT_LOGS];
 let overlapsState: OverlapRecord[] = [...INITIAL_OVERLAPS];
 let currentRoleState: UserRole = "SCRUTINY_OFFICER";
 
+export const DEFAULT_ENGINE_SETTINGS: EngineSettings = {
+  advanceWarningDays: 30,
+  highRiskThresholdDays: 3,
+  inactivityAlertDays: 5,
+  autoEscalateOverdue48h: true,
+  sendSmsDeficiencyAlert: true,
+  minOcrConfidencePercent: 70,
+  duplicateHashMode: "STRICT_CROSS_REGIONAL",
+};
+
+let settingsState: EngineSettings = { ...DEFAULT_ENGINE_SETTINGS };
+const storeListeners = new Set<() => void>();
+
+function notifyListeners(): void {
+  storeListeners.forEach((fn) => {
+    try {
+      fn();
+    } catch {
+      // ignore listener errors
+    }
+  });
+}
+
 export const FlowGuardStore = {
+  subscribe(listener: () => void): () => void {
+    storeListeners.add(listener);
+    return () => {
+      storeListeners.delete(listener);
+    };
+  },
+
   // Current Active Role & User
   getCurrentRole(): UserRole {
     return getStorage<UserRole>("current_role", currentRoleState);
@@ -724,6 +755,7 @@ export const FlowGuardStore = {
   setCurrentRole(role: UserRole): void {
     currentRoleState = role;
     setStorage("current_role", role);
+    notifyListeners();
   },
 
   getCurrentUser(): CurrentUserProfile {
@@ -799,6 +831,7 @@ export const FlowGuardStore = {
       details: `User authenticated successfully via National Regulatory Gateway (${user.designation}). Session Token: ${sessionData.token}`
     });
 
+    notifyListeners();
     return {
       success: true,
       user,
@@ -818,6 +851,7 @@ export const FlowGuardStore = {
     });
 
     setStorage("auth_session", "LOGGED_OUT");
+    notifyListeners();
   },
 
   // Applications
@@ -873,6 +907,7 @@ export const FlowGuardStore = {
       details: `Advanced workflow from [${oldStage}] to [${newStage}]. Status: ${newStatus}. Remarks: ${remarks}`
     });
 
+    notifyListeners();
     return apps[idx];
   },
 
@@ -916,6 +951,7 @@ export const FlowGuardStore = {
       details: `Returned with mandatory reasons: ${deficiencies.join(" | ")}`
     });
 
+    notifyListeners();
     return apps[idx];
   },
 
@@ -947,6 +983,7 @@ export const FlowGuardStore = {
       details: "Corrective records and undertakings submitted by institution."
     });
 
+    notifyListeners();
     return apps[idx];
   },
 
@@ -1004,6 +1041,7 @@ export const FlowGuardStore = {
       details: `Lodged new complaint/application for ${fullApp.institutionName} [Category: ${fullApp.category}]`
     });
 
+    notifyListeners();
     return fullApp;
   },
 
@@ -1066,6 +1104,7 @@ export const FlowGuardStore = {
       details: `Verification outcome: ${status}. Remarks: ${remarks}. Category: ${docs[idx].category}`
     });
 
+    notifyListeners();
     return docs[idx];
   },
 
@@ -1092,6 +1131,7 @@ export const FlowGuardStore = {
       details: `Uploaded ${fullDoc.title} (${fullDoc.fileName}) for institution ${fullDoc.institutionName}. Hash: ${fullDoc.fileHash.slice(0, 10)}...`
     });
 
+    notifyListeners();
     return fullDoc;
   },
 
@@ -1125,12 +1165,74 @@ export const FlowGuardStore = {
       `EVC scheduled for ${scheduledDate} with ${members.length} members.`
     );
 
+    notifyListeners();
     return events[idx];
   },
 
   // Undertakings
   getUndertakings(): Undertaking[] {
     return getStorage<Undertaking[]>("undertakings", undertakingsState);
+  },
+
+  updateUndertakingStatus(
+    id: string,
+    status: Undertaking["status"],
+    actorName: string
+  ): Undertaking | null {
+    const list = this.getUndertakings();
+    const idx = list.findIndex((u) => u.id === id);
+    if (idx === -1) return null;
+
+    const today = new Date().toISOString().split("T")[0];
+    list[idx] = {
+      ...list[idx],
+      status,
+      resolvedAt: status === "Complied" ? today : list[idx].resolvedAt,
+    };
+
+    undertakingsState = list;
+    setStorage("undertakings", list);
+
+    this.logAudit({
+      actorName,
+      actorRole: this.getCurrentRole(),
+      action: `UNDERTAKING_${status.toUpperCase().replace(/\s+/g, "_")}`,
+      targetType: "UNDERTAKING",
+      targetId: id,
+      details: `Updated undertaking [${list[idx].title}] status to ${status} for ${list[idx].institutionName}.`,
+    });
+
+    notifyListeners();
+    return list[idx];
+  },
+
+  // Engine Settings
+  getSettings(): EngineSettings {
+    return getStorage<EngineSettings>("engine_settings", settingsState);
+  },
+
+  saveSettings(next: EngineSettings): EngineSettings {
+    settingsState = { ...next };
+    setStorage("engine_settings", settingsState);
+
+    this.logAudit({
+      actorName: this.getCurrentUser().name,
+      actorRole: this.getCurrentRole(),
+      action: "ENGINE_SETTINGS_UPDATED",
+      targetType: "SYSTEM",
+      targetId: "SETTINGS-CONFIG",
+      details: `Updated Risk Radar & OCR Engine parameters (Warning: ${next.advanceWarningDays}d, High Risk: ${next.highRiskThresholdDays}d, Min OCR: ${next.minOcrConfidencePercent}%).`,
+    });
+
+    notifyListeners();
+    return settingsState;
+  },
+
+  resetSettings(): EngineSettings {
+    settingsState = { ...DEFAULT_ENGINE_SETTINGS };
+    setStorage("engine_settings", settingsState);
+    notifyListeners();
+    return settingsState;
   },
 
   // Notifications
@@ -1153,6 +1255,7 @@ export const FlowGuardStore = {
     list.unshift(record);
     notifsState = list;
     setStorage("notifications", list);
+    notifyListeners();
     return record;
   },
 
@@ -1164,6 +1267,7 @@ export const FlowGuardStore = {
       item.read = true;
       notifsState = list;
       setStorage("notifications", list);
+      notifyListeners();
     }
   },
 
@@ -1175,6 +1279,7 @@ export const FlowGuardStore = {
       item.read = true;
       notifsState = list;
       setStorage("notifications", list);
+      notifyListeners();
     }
   },
 
@@ -1240,6 +1345,7 @@ export const FlowGuardStore = {
       details: `Confirmed overlap [${overlaps[idx].type}]: ${overlaps[idx].matchedField} matches ${overlaps[idx].targetInstitutionName}. Remarks: ${remarks}`
     });
 
+    notifyListeners();
     return overlaps[idx];
   },
 
@@ -1269,12 +1375,13 @@ export const FlowGuardStore = {
       details: `Dismissed overlap [${overlaps[idx].type}]. Remarks: ${remarks}`
     });
 
+    notifyListeners();
     return overlaps[idx];
   },
 
   // Next Best Action Engine
-  getNextBestActions(currentRole: UserRole): NextBestActionItem[] {
-    const apps = this.getApplications();
+  getNextBestActions(currentRole: UserRole, appsOverride?: Application[]): NextBestActionItem[] {
+    const apps = appsOverride ?? this.getApplications();
     const actions: NextBestActionItem[] = [];
 
     for (const app of apps) {
@@ -1364,5 +1471,7 @@ export const FlowGuardStore = {
     notifsState = [...INITIAL_NOTIFICATIONS];
     auditState = [...INITIAL_AUDIT_LOGS];
     overlapsState = [...INITIAL_OVERLAPS];
+    settingsState = { ...DEFAULT_ENGINE_SETTINGS };
+    notifyListeners();
   }
 };

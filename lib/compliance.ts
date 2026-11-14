@@ -7,6 +7,7 @@ export interface AuditRecord {
   status: ComplianceStatus;
   date: string;
   score: number;
+  summary: string;
 }
 
 export interface MonthlyTrendData {
@@ -98,6 +99,87 @@ export function extractGroundingSources(rawChunks: any[] = []): Array<{ uri: str
       uri: w.uri,
       title: w.title || new URL(w.uri).hostname,
     }));
+}
+
+export const AUDIT_RECORDS: AuditRecord[] = [
+  {
+    id: "AUD-2024-001",
+    entity: "Public Health Dept",
+    type: "Financial Audit",
+    status: "Verified",
+    date: "2024-10-15",
+    score: 98,
+    summary: "Annual statutory disbursement and grant utilization audit for Public Health Dept. All treasury vouchers, procurement reconciliations, and ledger hashes passed cryptographic verification with zero material exceptions.",
+  },
+  {
+    id: "AUD-2024-002",
+    entity: "Transportation Authority",
+    type: "Security Compliance",
+    status: "Flagged",
+    date: "2024-10-18",
+    score: 72,
+    summary: "This audit evaluated data encryption standards and access control protocols across Transportation Authority regional telemetry gateways. Primary firewall controls passed, but a legacy multi-state synchronization module requires mTLS remediation.",
+  },
+  {
+    id: "AUD-2024-003",
+    entity: "Housing Bureau",
+    type: "Environmental Audit",
+    status: "Pending Review",
+    date: "2024-10-20",
+    score: 85,
+    summary: "Environmental clearance and municipal sewage treatment compliance inspection for Housing Bureau campus blocks. Primary EIA clearances are documented; final municipal water-recycling endorsement is awaiting officer sign-off.",
+  },
+  {
+    id: "AUD-2024-004",
+    entity: "Social Services",
+    type: "Data Privacy",
+    status: "Verified",
+    date: "2024-10-21",
+    score: 94,
+    summary: "Statutory data protection and beneficiary PII masking assessment for Social Services records. AES-256 at-rest encryption and role-based access logs satisfy national privacy standards.",
+  },
+  {
+    id: "AUD-2024-005",
+    entity: "Education Commission",
+    type: "Regulatory Review",
+    status: "Non-Compliant",
+    date: "2024-10-22",
+    score: 45,
+    summary: "Critical regulatory review of Education Commission institutional filings. Multiple mandatory faculty cadre ratios and expired land lease renewals remain uncured past statutory deadlines.",
+  },
+  {
+    id: "AUD-2024-006",
+    entity: "Water Utility",
+    type: "Infrastructure",
+    status: "Verified",
+    date: "2024-10-23",
+    score: 91,
+    summary: "Structural safety and municipal water supply redundancy audit for Water Utility treatment facilities. Geo-tagged inspection verified full instrumentation and emergency reserve capacity.",
+  },
+  {
+    id: "AUD-2024-007",
+    entity: "Labor Office",
+    type: "Employment Standards",
+    status: "Pending Review",
+    date: "2024-10-24",
+    score: 88,
+    summary: "Pay scale parity and statutory welfare compliance review for Labor Office contract registries. Initial payroll undertakings match prescribed norms and await final bureau endorsement.",
+  },
+];
+
+export function getAuditRecordById(auditId: string): AuditRecord | undefined {
+  const normalized = auditId.trim().toLowerCase();
+  return AUDIT_RECORDS.find((record) => record.id.toLowerCase() === normalized);
+}
+
+export function findDuplicateHashMatches<
+  T extends { id: string; fileHash: string; institutionName: string }
+>(targetDoc: T, allDocs: T[]): T[] {
+  if (!targetDoc.fileHash) return [];
+  const normalizedHash = targetDoc.fileHash.trim().toLowerCase();
+  return allDocs.filter(
+    (doc) => doc.id !== targetDoc.id && doc.fileHash.trim().toLowerCase() === normalizedHash
+  );
 }
 
 export function generateStatutoryFallback(

@@ -8,14 +8,16 @@ import {
   SIX_MONTH_TREND_DATA,
   formatGeminiContents,
   extractGroundingSources,
+  getAuditRecordById,
+  findDuplicateHashMatches,
   AuditRecord,
 } from "./compliance";
 import { FlowGuardStore } from "./flowguard-store";
 
 const sampleAudits: AuditRecord[] = [
-  { id: "AUD-001", entity: "Health Dept", type: "Financial", status: "Verified", date: "2024-10-15", score: 98 },
-  { id: "AUD-002", entity: "Transport", type: "Security", status: "Flagged", date: "2024-10-18", score: 70 },
-  { id: "AUD-003", entity: "Water Agency", type: "Environment", status: "Non-Compliant", date: "2024-10-20", score: 45 },
+  { id: "AUD-001", entity: "Health Dept", type: "Financial", status: "Verified", date: "2024-10-15", score: 98, summary: "Verified financial disbursements." },
+  { id: "AUD-002", entity: "Transport", type: "Security", status: "Flagged", date: "2024-10-18", score: 70, summary: "Flagged gateway access controls." },
+  { id: "AUD-003", entity: "Water Agency", type: "Environment", status: "Non-Compliant", date: "2024-10-20", score: 45, summary: "Expired environmental discharge clearance." },
 ];
 
 test("calculateAverageScore computes precise mean", () => {
@@ -81,6 +83,30 @@ test("extractGroundingSources filters valid web citations", () => {
   assert.equal(extracted[1].title, "FedRAMP Baselines");
 });
 
+test("getAuditRecordById retrieves distinct audit records case-insensitively", () => {
+  const rec1 = getAuditRecordById("AUD-2024-001");
+  assert.ok(rec1);
+  assert.equal(rec1.entity, "Public Health Dept");
+  assert.equal(rec1.score, 98);
+
+  const rec5 = getAuditRecordById("aud-2024-005");
+  assert.ok(rec5);
+  assert.equal(rec5.status, "Non-Compliant");
+  assert.equal(getAuditRecordById("AUD-9999-999"), undefined);
+});
+
+test("findDuplicateHashMatches detects cross-document SHA-256 collisions", () => {
+  const docs = FlowGuardStore.getDocuments();
+  const doc002 = docs.find((d) => d.id === "doc-002");
+  const doc001 = docs.find((d) => d.id === "doc-001");
+  assert.ok(doc002);
+  assert.ok(doc001);
+
+  const matchesFor002 = findDuplicateHashMatches(doc002, docs);
+  assert.ok(matchesFor002.some((m) => m.id === "doc-005"));
+  assert.equal(findDuplicateHashMatches(doc001, docs).length, 0);
+});
+
 test("FlowGuardStore retrieves synthetic applications and identifies overdue cases", () => {
   const apps = FlowGuardStore.getApplications();
   assert.ok(apps.length >= 5);
@@ -101,6 +127,26 @@ test("FlowGuardStore verifies documents and logs to audit trail", () => {
 
   const logs = FlowGuardStore.getAuditLogs();
   assert.ok(logs.some(l => l.targetId === doc.id && l.action === "DOCUMENT_VERIFIED"));
+});
+
+test("FlowGuardStore persists settings and updates undertaking compliance", () => {
+  const saved = FlowGuardStore.saveSettings({
+    advanceWarningDays: 21,
+    highRiskThresholdDays: 4,
+    inactivityAlertDays: 6,
+    autoEscalateOverdue48h: false,
+    sendSmsDeficiencyAlert: true,
+    minOcrConfidencePercent: 75,
+    duplicateHashMode: "INTRA_STATE",
+  });
+  assert.equal(saved.advanceWarningDays, 21);
+  assert.equal(FlowGuardStore.getSettings().minOcrConfidencePercent, 75);
+
+  const updatedUnd = FlowGuardStore.updateUndertakingStatus("und-002", "Complied", "Dr. K. N. Patil");
+  assert.ok(updatedUnd);
+  assert.equal(updatedUnd.status, "Complied");
+
+  FlowGuardStore.resetToDefaultDemo();
 });
 
 test("FlowGuardStore generates role-grounded Next Best Actions", () => {
