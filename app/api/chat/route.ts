@@ -6,14 +6,16 @@ import {
   generateStatutoryFallback,
 } from "@/lib/compliance";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      "User-Agent": "aistudio-build",
+const getAIClient = () => {
+  return new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY || "",
+    httpOptions: {
+      headers: {
+        "User-Agent": "aistudio-build",
+      },
     },
-  },
-});
+  });
+};
 
 const ROLE_INSTRUCTIONS: Record<string, string> = {
   compliance_officer:
@@ -61,9 +63,23 @@ export async function POST(req: NextRequest) {
     // Convert messages into @google/genai contents format
     const contents = formatGeminiContents(messages);
 
-    // Configure tools: add googleSearch if enabled
-    const tools = enableSearch ? [{ googleSearch: {} }] : undefined;
+    if (!process.env.GEMINI_API_KEY) {
+      const fallbackResponse = generateStatutoryFallback(
+        userQuery || "NIST SP 800-53 telemetry audit standards",
+        selectedRole
+      );
 
+      return NextResponse.json({
+        text: `${fallbackResponse.text}\n\n*Note: GEMINI_API_KEY is not configured in the environment; displaying verified statutory knowledge base synthesis.*`,
+        groundingSources: fallbackResponse.sources,
+        searchQueries: fallbackResponse.queries,
+        modelUsed: `${requestedModel} (Statutory Knowledge Base)`,
+        quotaStatus: "offline",
+      });
+    }
+
+    const tools = enableSearch ? [{ googleSearch: {} }] : undefined;
+    const ai = getAIClient();
     const response = await ai.models.generateContent({
       model: model || "gemini-3.8-flash",
       contents,

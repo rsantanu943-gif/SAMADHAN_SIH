@@ -190,7 +190,7 @@ export interface AuditLogEntry {
   actorName: string;
   actorRole: UserRole | 'SYSTEM_ENGINE';
   action: string;
-  targetType: 'APPLICATION' | 'DOCUMENT' | 'EVC' | 'UNDERTAKING' | 'NOTIFICATION' | 'WORKFLOW';
+  targetType: 'APPLICATION' | 'DOCUMENT' | 'EVC' | 'UNDERTAKING' | 'NOTIFICATION' | 'WORKFLOW' | 'AUTH_SESSION' | 'SYSTEM';
   targetId: string;
   details: string;
   ipAddress: string;

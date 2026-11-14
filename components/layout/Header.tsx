@@ -11,7 +11,8 @@ import {
   ChevronDown, 
   Building2,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  LogIn
 } from "lucide-react";
 import { FlowGuardStore, DEMO_USERS } from "@/lib/flowguard-store";
 import { UserRole } from "@/lib/types";
@@ -22,6 +23,12 @@ export function Header() {
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [showNotifPreview, setShowNotifPreview] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const isAuthenticated = useSyncExternalStore(
+    emptySubscribe,
+    () => FlowGuardStore.isAuthenticated(),
+    () => true
+  );
 
   const currentRole = useSyncExternalStore(
     emptySubscribe,
@@ -110,25 +117,35 @@ export function Header() {
           )}
         </div>
 
-        {/* Role Switcher (RBAC Evaluation) */}
+        {/* Role Switcher or Sign In */}
         <div className="relative pl-2 border-l border-slate-200">
-          <button
-            onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-            className="flex items-center gap-2.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200/80 rounded-md transition-all text-left border border-slate-200/80 cursor-pointer"
-          >
-            <div className="w-7 h-7 rounded-md bg-slate-900 text-amber-400 font-black text-xs flex items-center justify-center shrink-0">
-              <UserCheck className="w-4 h-4" />
-            </div>
-            <div className="hidden md:block">
-              <div className="flex items-center gap-1.5">
-                <p className="text-xs font-bold text-slate-900 leading-tight">{currentUser.name}</p>
-                <ChevronDown className="w-3 h-3 text-slate-500" />
+          {!isAuthenticated ? (
+            <Link
+              href="/login"
+              className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-md text-xs shadow-xs transition-colors"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Portal Sign In</span>
+            </Link>
+          ) : (
+            <button
+              onClick={() => setShowRoleDropdown(!showRoleDropdown)}
+              className="flex items-center gap-2.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200/80 rounded-md transition-all text-left border border-slate-200/80 cursor-pointer"
+            >
+              <div className="w-7 h-7 rounded-md bg-slate-900 text-amber-400 font-black text-xs flex items-center justify-center shrink-0">
+                <UserCheck className="w-4 h-4" />
               </div>
-              <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wider">
-                {currentRole.replace("_", " ")}
-              </p>
-            </div>
-          </button>
+              <div className="hidden md:block">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-slate-900 leading-tight">{currentUser.name}</p>
+                  <ChevronDown className="w-3 h-3 text-slate-500" />
+                </div>
+                <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wider">
+                  {currentRole.replace("_", " ")}
+                </p>
+              </div>
+            </button>
+          )}
 
           {showRoleDropdown && (
             <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-2xl z-50 py-1.5 text-xs animate-in fade-in">
@@ -163,6 +180,34 @@ export function Header() {
                   </button>
                 );
               })}
+
+              {/* Portal Login & Sign Out Actions */}
+              <div className="pt-2 mt-1 border-t border-slate-100 px-2 space-y-1">
+                <Link
+                  href="/login"
+                  onClick={() => setShowRoleDropdown(false)}
+                  className="w-full text-left px-2.5 py-1.5 rounded hover:bg-slate-100 text-slate-700 flex items-center justify-between text-xs font-semibold transition-colors"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Open Login Portal</span>
+                  </span>
+                  <ExternalLink className="w-3 h-3 text-slate-400" />
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    FlowGuardStore.logout();
+                    setShowRoleDropdown(false);
+                    window.location.href = "/login";
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded hover:bg-red-50 text-red-600 flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
+                  <span>Sign Out of Terminal</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

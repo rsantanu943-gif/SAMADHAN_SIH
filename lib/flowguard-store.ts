@@ -731,6 +731,95 @@ export const FlowGuardStore = {
     return DEMO_USERS[role] || DEMO_USERS.SCRUTINY_OFFICER;
   },
 
+  // Authentication & Session Management
+  isAuthenticated(): boolean {
+    const session = getStorage<any>("auth_session", null);
+    if (session === "LOGGED_OUT") return false;
+    return true;
+  },
+
+  getSessionInfo() {
+    const isAuth = this.isAuthenticated();
+    const user = this.getCurrentUser();
+    const session = getStorage<any>("auth_session", null);
+    return {
+      isAuthenticated: isAuth,
+      user,
+      role: user.role,
+      sessionStarted: session?.loginTime || "2026-11-09 09:30 IST",
+      terminalId: session?.terminalId || "NIC-SEC-DELHI-04",
+      token: session?.token || "AUTH_JWT_SECURE_TOKEN_2026"
+    };
+  },
+
+  login(params: {
+    role?: UserRole;
+    email?: string;
+    permanentId?: string;
+    rememberMe?: boolean;
+    ipAddress?: string;
+  }): { success: boolean; user: CurrentUserProfile; message: string } {
+    let matchedRole: UserRole = params.role || "SCRUTINY_OFFICER";
+
+    if (params.permanentId) {
+      const inst = this.getInstitutions().find(i => i.permanentId === params.permanentId);
+      if (inst) {
+        matchedRole = "INSTITUTION_ADMIN";
+      }
+    } else if (params.email) {
+      const foundRole = (Object.keys(DEMO_USERS) as UserRole[]).find(
+        r => DEMO_USERS[r].email.toLowerCase() === params.email?.toLowerCase()
+      );
+      if (foundRole) {
+        matchedRole = foundRole;
+      }
+    }
+
+    this.setCurrentRole(matchedRole);
+    const user = DEMO_USERS[matchedRole] || DEMO_USERS.SCRUTINY_OFFICER;
+
+    const nowStr = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) + " IST";
+    const sessionData = {
+      user,
+      role: matchedRole,
+      loginTime: nowStr,
+      terminalId: "TERM-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+      token: "JWT-SAMADHAN-" + Date.now().toString(36),
+      rememberMe: !!params.rememberMe
+    };
+
+    setStorage("auth_session", sessionData);
+
+    this.logAudit({
+      actorName: user.name,
+      actorRole: matchedRole,
+      action: "USER_AUTHENTICATION_SUCCESS",
+      targetType: "AUTH_SESSION",
+      targetId: user.id,
+      details: `User authenticated successfully via National Regulatory Gateway (${user.designation}). Session Token: ${sessionData.token}`
+    });
+
+    return {
+      success: true,
+      user,
+      message: `Welcome back, ${user.name} (${user.designation}). Authenticated successfully.`
+    };
+  },
+
+  logout(): void {
+    const user = this.getCurrentUser();
+    this.logAudit({
+      actorName: user.name,
+      actorRole: user.role,
+      action: "USER_LOGOUT",
+      targetType: "AUTH_SESSION",
+      targetId: user.id,
+      details: `User signed out of terminal session.`
+    });
+
+    setStorage("auth_session", "LOGGED_OUT");
+  },
+
   // Applications
   getApplications(filter?: { region?: string; riskLevel?: string; stage?: string; institutionId?: string }): Application[] {
     const apps = getStorage<Application[]>("applications", appsState);

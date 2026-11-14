@@ -19,11 +19,15 @@ import {
   Menu,
   ShieldAlert,
   Building2,
-  FolderGit2
+  FolderGit2,
+  LogIn,
+  LogOut,
+  UserCheck
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { FlowGuardStore } from "@/lib/flowguard-store";
 
 const CORE_NAV = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/" },
@@ -50,11 +54,20 @@ const OVERSIGHT_NAV = [
 const SYSTEM_NAV = [
   { label: "Settings & Config", icon: Settings, href: "/settings" },
   { label: "APH 2026 Handbook", icon: HelpCircle, href: "/help" },
+  { label: "Regulatory Login", icon: LogIn, href: "/login" },
 ];
+
+const emptySubscribe = () => () => {};
 
 export function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const currentUser = useSyncExternalStore(
+    emptySubscribe,
+    () => FlowGuardStore.getCurrentUser(),
+    () => FlowGuardStore.getCurrentUser()
+  );
 
   return (
     <aside 
@@ -211,8 +224,45 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Bottom Configuration */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-950/40 flex flex-col gap-1">
+      {/* Bottom Session & Configuration */}
+      <div className="p-3 border-t border-slate-800/80 bg-slate-950/60 flex flex-col gap-2">
+        {/* User Session Card */}
+        {!isCollapsed ? (
+          <div className="p-2 bg-slate-900/90 rounded-lg border border-slate-800 flex items-center justify-between">
+            <Link href="/login" className="flex items-center gap-2 min-w-0 flex-1 hover:opacity-80 transition-opacity" title="Switch Account / Login">
+              <div className="w-7 h-7 rounded bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
+                {currentUser.name.charAt(0)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-slate-200 truncate leading-tight">{currentUser.name}</p>
+                <p className="text-[9px] font-mono text-amber-400 uppercase truncate">
+                  {currentUser.role.replace("_", " ")}
+                </p>
+              </div>
+            </Link>
+            <button
+              onClick={() => {
+                FlowGuardStore.logout();
+                window.location.href = "/login";
+              }}
+              title="Sign Out of Session"
+              className="p-1 hover:bg-slate-800 text-slate-400 hover:text-red-400 rounded transition-colors cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <Link
+              href="/login"
+              title={`Active: ${currentUser.name} (${currentUser.role})`}
+              className="w-8 h-8 rounded bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center hover:ring-2 hover:ring-amber-400"
+            >
+              {currentUser.name.charAt(0)}
+            </Link>
+          </div>
+        )}
+
         {SYSTEM_NAV.map((item) => (
           <Link
             key={item.href}
@@ -225,9 +275,9 @@ export function Sidebar() {
         ))}
 
         {!isCollapsed && (
-          <div className="mt-2 px-2 py-1.5 bg-slate-800/40 rounded border border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
+          <div className="px-2 py-1 bg-slate-800/40 rounded border border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
             <span className="truncate">Approval Cycle AY 26-27</span>
-            <span className="text-emerald-400 font-bold">LIVE</span>
+            <span className="text-emerald-400 font-bold">SECURED</span>
           </div>
         )}
       </div>
